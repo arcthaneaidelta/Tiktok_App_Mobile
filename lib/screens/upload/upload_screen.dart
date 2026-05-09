@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:video_player/video_player.dart';
 import '../../providers/app_provider.dart';
 import '../../theme/app_theme.dart';
 
@@ -17,12 +18,15 @@ class _UploadScreenState extends State<UploadScreen> {
   final _musicController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   String? _selectedVideoPath;
+  VideoPlayerController? _previewController;
+  bool _previewReady = false;
   bool _uploading = false;
 
   @override
   void dispose() {
     _titleController.dispose();
     _musicController.dispose();
+    _previewController?.dispose();
     super.dispose();
   }
 
@@ -32,9 +36,42 @@ class _UploadScreenState extends State<UploadScreen> {
       source: ImageSource.gallery,
       maxDuration: const Duration(seconds: 60),
     );
-    if (video != null) {
-      setState(() => _selectedVideoPath = video.path);
+    if (video == null) return;
+    await _loadPreview(video.path);
+  }
+
+  Future<void> _loadPreview(String path) async {
+    await _previewController?.dispose();
+    final controller = VideoPlayerController.file(File(path));
+    setState(() {
+      _selectedVideoPath = path;
+      _previewController = controller;
+      _previewReady = false;
+    });
+    try {
+      await controller.initialize();
+      controller.setLooping(true);
+      if (mounted) setState(() => _previewReady = true);
+    } catch (_) {
+      if (mounted) setState(() => _previewReady = false);
     }
+  }
+
+  void _togglePreview() {
+    final c = _previewController;
+    if (c == null || !c.value.isInitialized) return;
+    setState(() {
+      c.value.isPlaying ? c.pause() : c.play();
+    });
+  }
+
+  Future<void> _clearVideo() async {
+    await _previewController?.dispose();
+    setState(() {
+      _selectedVideoPath = null;
+      _previewController = null;
+      _previewReady = false;
+    });
   }
 
   Future<void> _upload() async {
@@ -68,8 +105,12 @@ class _UploadScreenState extends State<UploadScreen> {
       );
       _titleController.clear();
       _musicController.clear();
+      await _previewController?.dispose();
+      if (!mounted) return;
       setState(() {
         _selectedVideoPath = null;
+        _previewController = null;
+        _previewReady = false;
         _uploading = false;
       });
     } catch (e) {
@@ -101,64 +142,32 @@ class _UploadScreenState extends State<UploadScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                GestureDetector(
-                  onTap: _pickVideo,
-                  child: Container(
-                    height: 220,
-                    decoration: BoxDecoration(
-                      gradient: _selectedVideoPath != null
-                          ? LinearGradient(
-                              colors: [
-                                AppColors.primary.withOpacity(0.18),
-                                AppColors.secondary.withOpacity(0.10),
-                              ],
-                            )
-                          : null,
-                      color: _selectedVideoPath != null ? null : AppColors.surface,
-                      borderRadius: BorderRadius.circular(AppRadii.lg),
-                      border: Border.all(
-                        color: _selectedVideoPath != null
-                            ? AppColors.primary.withOpacity(0.6)
-                            : AppColors.border,
-                        width: _selectedVideoPath != null ? 1.5 : 1,
+                if (_selectedVideoPath == null)
+                  GestureDetector(
+                    onTap: _pickVideo,
+                    child: Container(
+                      height: 220,
+                      decoration: BoxDecoration(
+                        color: AppColors.surface,
+                        borderRadius: BorderRadius.circular(AppRadii.lg),
+                        border: Border.all(color: AppColors.border),
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: const [
+                          Icon(Icons.cloud_upload_outlined, size: 56, color: AppColors.textDim),
+                          SizedBox(height: 12),
+                          Text('Tap to select video',
+                              style: TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w600)),
+                          SizedBox(height: 4),
+                          Text('Max 60 seconds  ·  MP4, MOV',
+                              style: TextStyle(color: AppColors.textDim, fontSize: 12)),
+                        ],
                       ),
                     ),
-                    child: _selectedVideoPath != null
-                        ? Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Container(
-                                width: 64,
-                                height: 64,
-                                decoration: const BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  gradient: AppGradients.pinkPurple,
-                                ),
-                                child: const Icon(Icons.check_rounded, color: Colors.white, size: 32),
-                              ),
-                              const SizedBox(height: 12),
-                              const Text('Video selected', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
-                              const SizedBox(height: 6),
-                              TextButton(
-                                onPressed: _pickVideo,
-                                child: const Text('Change'),
-                              ),
-                            ],
-                          )
-                        : Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: const [
-                              Icon(Icons.cloud_upload_outlined, size: 56, color: AppColors.textDim),
-                              SizedBox(height: 12),
-                              Text('Tap to select video',
-                                  style: TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w600)),
-                              SizedBox(height: 4),
-                              Text('Max 60 seconds  ·  MP4, MOV',
-                                  style: TextStyle(color: AppColors.textDim, fontSize: 12)),
-                            ],
-                          ),
-                  ),
-                ),
+                  )
+                else
+                  _buildPreview(),
                 const SizedBox(height: 22),
                 TextFormField(
                   controller: _titleController,
@@ -208,6 +217,105 @@ class _UploadScreenState extends State<UploadScreen> {
                 ),
               ],
             ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPreview() {
+    final c = _previewController;
+    final aspect = (_previewReady && c != null) ? c.value.aspectRatio : 9 / 16;
+    return Container(
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        color: Colors.black,
+        borderRadius: BorderRadius.circular(AppRadii.lg),
+        border: Border.all(color: AppColors.primary.withOpacity(0.5)),
+      ),
+      child: AspectRatio(
+        aspectRatio: aspect.isFinite && aspect > 0 ? aspect : 9 / 16,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            if (_previewReady && c != null)
+              GestureDetector(
+                onTap: _togglePreview,
+                child: VideoPlayer(c),
+              )
+            else
+              const Center(child: CircularProgressIndicator()),
+            if (_previewReady && c != null && !c.value.isPlaying)
+              IgnorePointer(
+                child: Center(
+                  child: Container(
+                    width: 64,
+                    height: 64,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.black.withOpacity(0.45),
+                    ),
+                    child: const Icon(Icons.play_arrow_rounded, color: Colors.white, size: 36),
+                  ),
+                ),
+              ),
+            Positioned(
+              top: 8,
+              right: 8,
+              child: Row(
+                children: [
+                  _previewActionButton(
+                    icon: Icons.swap_horiz_rounded,
+                    onTap: _pickVideo,
+                    tooltip: 'Change',
+                  ),
+                  const SizedBox(width: 6),
+                  _previewActionButton(
+                    icon: Icons.close_rounded,
+                    onTap: _clearVideo,
+                    tooltip: 'Remove',
+                  ),
+                ],
+              ),
+            ),
+            if (_previewReady && c != null)
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: VideoProgressIndicator(
+                  c,
+                  allowScrubbing: true,
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                  colors: const VideoProgressColors(
+                    playedColor: AppColors.primary,
+                    bufferedColor: AppColors.borderStrong,
+                    backgroundColor: AppColors.border,
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _previewActionButton({
+    required IconData icon,
+    required VoidCallback onTap,
+    required String tooltip,
+  }) {
+    return Material(
+      color: Colors.black.withOpacity(0.55),
+      shape: const CircleBorder(),
+      child: InkWell(
+        customBorder: const CircleBorder(),
+        onTap: onTap,
+        child: Tooltip(
+          message: tooltip,
+          child: Padding(
+            padding: const EdgeInsets.all(8),
+            child: Icon(icon, color: Colors.white, size: 20),
           ),
         ),
       ),

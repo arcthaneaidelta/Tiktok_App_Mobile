@@ -123,11 +123,33 @@ class AppProvider extends ChangeNotifier {
 
   Future<void> incrementView(String videoId) async {
     await _videoService.incrementView(videoId);
-    final idx = _feed.indexWhere((v) => v.id == videoId);
-    if (idx != -1) {
-      _feed[idx] = _feed[idx].copyWith(views: _feed[idx].views + 1);
-      notifyListeners();
+    _bumpVideoCounts(videoId, viewsDelta: 1);
+  }
+
+  // Bump cached counts for a video everywhere it appears (feed, my videos,
+  // liked videos), so the UI stays consistent regardless of where the user
+  // is looking.
+  void _bumpVideoCounts(
+    String videoId, {
+    int viewsDelta = 0,
+    int sharesDelta = 0,
+    int likesDelta = 0,
+    int commentDelta = 0,
+  }) {
+    bool changed = false;
+    for (final list in [_feed, _myVideos, _likedVideos]) {
+      final idx = list.indexWhere((v) => v.id == videoId);
+      if (idx == -1) continue;
+      final v = list[idx];
+      list[idx] = v.copyWith(
+        views: v.views + viewsDelta,
+        shares: v.shares + sharesDelta,
+        likes: v.likes + likesDelta,
+        commentCount: v.commentCount + commentDelta,
+      );
+      changed = true;
     }
+    if (changed) notifyListeners();
   }
 
   bool isVideoLiked(String videoId) {
@@ -137,27 +159,21 @@ class AppProvider extends ChangeNotifier {
   Future<void> toggleLike(String videoId) async {
     if (currentUser == null) return;
     final wasLiked = isVideoLiked(videoId);
+    final delta = wasLiked ? -1 : 1;
 
-    final idx = _feed.indexWhere((v) => v.id == videoId);
     VideoModel? videoSnapshot;
-    if (idx != -1) {
-      _feed[idx] = _feed[idx].copyWith(
-        likes: _feed[idx].likes + (wasLiked ? -1 : 1),
-      );
-      videoSnapshot = _feed[idx];
-    } else {
-      for (final v in [..._likedVideos, ..._myVideos]) {
-        if (v.id == videoId) {
-          videoSnapshot = v;
-          break;
-        }
+    for (final v in [..._feed, ..._myVideos, ..._likedVideos]) {
+      if (v.id == videoId) {
+        videoSnapshot = v;
+        break;
       }
     }
 
+    _bumpVideoCounts(videoId, likesDelta: delta);
     if (wasLiked) {
       _likedVideos.removeWhere((v) => v.id == videoId);
     } else if (videoSnapshot != null && !_likedVideos.any((v) => v.id == videoId)) {
-      _likedVideos.insert(0, videoSnapshot);
+      _likedVideos.insert(0, videoSnapshot.copyWith(likes: videoSnapshot.likes + 1));
     }
     notifyListeners();
 
@@ -166,11 +182,7 @@ class AppProvider extends ChangeNotifier {
       await _authService.refreshCurrentUser();
       notifyListeners();
     } catch (_) {
-      if (idx != -1) {
-        _feed[idx] = _feed[idx].copyWith(
-          likes: _feed[idx].likes + (wasLiked ? 1 : -1),
-        );
-      }
+      _bumpVideoCounts(videoId, likesDelta: -delta);
       if (wasLiked && videoSnapshot != null) {
         _likedVideos.insert(0, videoSnapshot);
       } else if (!wasLiked) {
@@ -182,11 +194,7 @@ class AppProvider extends ChangeNotifier {
 
   Future<void> shareVideo(String videoId) async {
     await _videoService.incrementShare(videoId);
-    final idx = _feed.indexWhere((v) => v.id == videoId);
-    if (idx != -1) {
-      _feed[idx] = _feed[idx].copyWith(shares: _feed[idx].shares + 1);
-      notifyListeners();
-    }
+    _bumpVideoCounts(videoId, sharesDelta: 1);
   }
 
   Future<VideoModel> uploadVideo({
@@ -236,11 +244,7 @@ class AppProvider extends ChangeNotifier {
     final comment = await _commentService.addComment(videoId, text);
     _commentsCache.putIfAbsent(videoId, () => []);
     _commentsCache[videoId]!.insert(0, comment);
-    final idx = _feed.indexWhere((v) => v.id == videoId);
-    if (idx != -1) {
-      _feed[idx] = _feed[idx].copyWith(commentCount: _feed[idx].commentCount + 1);
-    }
-    notifyListeners();
+    _bumpVideoCounts(videoId, commentDelta: 1);
   }
 
   // ---------- Admin ----------
