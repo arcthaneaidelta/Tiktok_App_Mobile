@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../models/user_model.dart';
+import '../../models/video_model.dart';
 import '../../providers/app_provider.dart';
+import '../../theme/app_theme.dart';
 import '../../widgets/video_preview_sheet.dart';
+import '../../widgets/video_thumbnail.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -36,67 +39,131 @@ class _ProfileScreenState extends State<ProfileScreen> {
         if (user == null) return const SizedBox();
 
         return Scaffold(
-          backgroundColor: const Color(0xFF1a1a2e),
+          backgroundColor: AppColors.background,
+          extendBodyBehindAppBar: true,
           appBar: AppBar(
             title: const Text('Profile'),
-            backgroundColor: Colors.transparent,
-            elevation: 0,
             actions: [
               IconButton(
-                icon: const Icon(Icons.logout),
+                icon: const Icon(Icons.logout_rounded),
                 onPressed: () => provider.logout(),
               ),
             ],
           ),
-          body: RefreshIndicator(
-            onRefresh: _refresh,
-            color: Colors.pinkAccent,
-            backgroundColor: const Color(0xFF1a1a2e),
-            child: SingleChildScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              children: [
-                // Avatar
-                CircleAvatar(
-                  radius: 50,
-                  backgroundColor: Colors.pinkAccent,
-                  child: Text(
-                    user.username[0].toUpperCase(),
-                    style: const TextStyle(fontSize: 36, color: Colors.white, fontWeight: FontWeight.bold),
-                  ),
+          body: Container(
+            decoration: const BoxDecoration(gradient: AppGradients.backgroundGlow),
+            child: RefreshIndicator(
+              onRefresh: _refresh,
+              color: AppColors.primary,
+              backgroundColor: AppColors.surface,
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.fromLTRB(20, 100, 20, 120),
+                child: Column(
+                  children: [
+                    _avatarHeader(user),
+                    const SizedBox(height: 28),
+                    if (user.role == UserRole.endUser)
+                      _buildEndUserContent(context, provider),
+                    if (user.role == UserRole.contentCreator)
+                      _buildCreatorContent(context, provider, user),
+                  ],
                 ),
-                const SizedBox(height: 16),
-                Text(
-                  '@${user.username}',
-                  style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 4),
-                Text(user.email, style: const TextStyle(color: Colors.white54)),
-                const SizedBox(height: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: _roleColor(user.role).withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: _roleColor(user.role).withOpacity(0.5)),
-                  ),
-                  child: Text(
-                    user.roleLabel,
-                    style: TextStyle(color: _roleColor(user.role), fontWeight: FontWeight.bold, fontSize: 13),
-                  ),
-                ),
-                const SizedBox(height: 32),
-
-                // Content based on role
-                if (user.role == UserRole.endUser) _buildEndUserContent(context, provider),
-                if (user.role == UserRole.contentCreator) _buildCreatorContent(context, provider, user),
-              ],
+              ),
             ),
-          ),
           ),
         );
       },
+    );
+  }
+
+  Widget _avatarHeader(UserModel user) {
+    return Column(
+      children: [
+        Container(
+          width: 104,
+          height: 104,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: AppGradients.pinkPurple,
+            boxShadow: AppShadows.pinkGlow,
+          ),
+          child: Center(
+            child: Text(
+              user.username[0].toUpperCase(),
+              style: const TextStyle(fontSize: 40, color: Colors.white, fontWeight: FontWeight.w900),
+            ),
+          ),
+        ),
+        const SizedBox(height: 14),
+        Text(
+          '@${user.username}',
+          style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w800),
+        ),
+        const SizedBox(height: 2),
+        Text(user.email, style: const TextStyle(color: AppColors.textDim, fontSize: 13)),
+        const SizedBox(height: 12),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                _roleColor(user.role).withOpacity(0.25),
+                _roleColor(user.role).withOpacity(0.10),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(AppRadii.pill),
+            border: Border.all(color: _roleColor(user.role).withOpacity(0.6)),
+          ),
+          child: Text(
+            user.roleLabel.toUpperCase(),
+            style: TextStyle(
+              color: _roleColor(user.role),
+              fontWeight: FontWeight.w800,
+              fontSize: 11,
+              letterSpacing: 1.2,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _sectionTitle(String text) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: Text(
+          text,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 17,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 0.3,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _emptyBlock(IconData icon, String text) {
+    return Container(
+      padding: const EdgeInsets.all(32),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(AppRadii.lg),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Center(
+        child: Column(
+          children: [
+            Icon(icon, color: AppColors.textFaint, size: 48),
+            const SizedBox(height: 8),
+            Text(text, style: const TextStyle(color: AppColors.textDim)),
+          ],
+        ),
+      ),
     );
   }
 
@@ -105,77 +172,61 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Liked Videos',
-          style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 16),
+        _sectionTitle('Liked Videos'),
         if (likedVideos.isEmpty)
-          Container(
-            padding: const EdgeInsets.all(32),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.05),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Center(
-              child: Column(
-                children: [
-                  Icon(Icons.favorite_border, color: Colors.white30, size: 48),
-                  SizedBox(height: 8),
-                  Text('No liked videos yet', style: TextStyle(color: Colors.white38)),
-                ],
-              ),
-            ),
-          )
+          _emptyBlock(Icons.favorite_border_rounded, 'No liked videos yet')
         else
-          ...likedVideos.map((video) => Container(
-                margin: const EdgeInsets.only(bottom: 12),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.05),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Material(
-                  color: Colors.transparent,
-                  borderRadius: BorderRadius.circular(12),
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(12),
-                    onTap: () => showVideoPreviewSheet(context, video),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 60,
-                            height: 60,
-                            decoration: BoxDecoration(
-                              color: Colors.pinkAccent.withOpacity(0.2),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: const Icon(Icons.play_arrow, color: Colors.pinkAccent),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(video.title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                                Text('@${video.creatorUsername}', style: const TextStyle(color: Colors.white54, fontSize: 13)),
-                              ],
-                            ),
-                          ),
-                          Column(
-                            children: [
-                              Text('${video.likes}', style: const TextStyle(color: Colors.pinkAccent, fontWeight: FontWeight.bold)),
-                              const Icon(Icons.favorite, color: Colors.pinkAccent, size: 16),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
+          ...likedVideos.map((video) => _likedVideoTile(video)),
+      ],
+    );
+  }
+
+  Widget _likedVideoTile(VideoModel video) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(AppRadii.md),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(AppRadii.md),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(AppRadii.md),
+          onTap: () => showVideoPreviewSheet(context, video),
+          child: Padding(
+            padding: const EdgeInsets.all(14),
+            child: Row(
+              children: [
+                VideoThumbnail(thumbnailUrl: video.thumbnailUrl, size: 56),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(video.title,
+                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 15)),
+                      const SizedBox(height: 2),
+                      Text('@${video.creatorUsername}',
+                          style: const TextStyle(color: AppColors.textDim, fontSize: 12)),
+                    ],
                   ),
                 ),
-              )),
-      ],
+                Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.favorite_rounded, color: AppColors.primary, size: 18),
+                    const SizedBox(height: 2),
+                    Text('${video.likes}',
+                        style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700, fontSize: 12)),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 
@@ -188,110 +239,89 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Stats row
         Row(
           children: [
-            _statCard('Videos', '${videos.length}', Icons.videocam),
-            const SizedBox(width: 12),
-            _statCard('Views', _formatCount(totalViews), Icons.visibility),
-            const SizedBox(width: 12),
-            _statCard('Likes', _formatCount(totalLikes), Icons.favorite),
+            _statCard('Videos', '${videos.length}', Icons.videocam_rounded),
+            const SizedBox(width: 10),
+            _statCard('Views', _formatCount(totalViews), Icons.visibility_rounded),
+            const SizedBox(width: 10),
+            _statCard('Likes', _formatCount(totalLikes), Icons.favorite_rounded),
           ],
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 10),
         Row(
           children: [
-            _statCard('Comments', _formatCount(totalComments), Icons.comment),
+            _statCard('Comments', _formatCount(totalComments), Icons.comment_rounded),
             const Spacer(flex: 2),
           ],
         ),
-        const SizedBox(height: 24),
-        const Text(
-          'My Videos',
-          style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 26),
+        _sectionTitle('My Videos'),
         if (videos.isEmpty)
-          Container(
-            padding: const EdgeInsets.all(32),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.05),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Center(
-              child: Column(
-                children: [
-                  Icon(Icons.videocam_off, color: Colors.white30, size: 48),
-                  SizedBox(height: 8),
-                  Text('No videos uploaded yet', style: TextStyle(color: Colors.white38)),
-                ],
-              ),
-            ),
-          )
+          _emptyBlock(Icons.videocam_off_rounded, 'No videos uploaded yet')
         else
-          ...videos.map((video) => Container(
-                margin: const EdgeInsets.only(bottom: 12),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.05),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Material(
-                  color: Colors.transparent,
-                  borderRadius: BorderRadius.circular(12),
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(12),
-                    onTap: () => showVideoPreviewSheet(context, video),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 60,
-                            height: 60,
-                            decoration: BoxDecoration(
-                              color: Colors.pinkAccent.withOpacity(0.2),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: const Icon(Icons.play_arrow, color: Colors.pinkAccent),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(video.title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                                const SizedBox(height: 4),
-                                Text(
-                                  '${_formatCount(video.views)} views  |  ${_formatCount(video.likes)} likes  |  ${_formatCount(video.commentCount)} comments',
-                                  style: const TextStyle(color: Colors.white54, fontSize: 12),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
+          ...videos.map((video) => _myVideoTile(video)),
+      ],
+    );
+  }
+
+  Widget _myVideoTile(VideoModel video) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(AppRadii.md),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(AppRadii.md),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(AppRadii.md),
+          onTap: () => showVideoPreviewSheet(context, video),
+          child: Padding(
+            padding: const EdgeInsets.all(14),
+            child: Row(
+              children: [
+                VideoThumbnail(thumbnailUrl: video.thumbnailUrl, size: 56),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(video.title,
+                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 15)),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${_formatCount(video.views)} · ${_formatCount(video.likes)} ❤ · ${_formatCount(video.commentCount)} 💬',
+                        style: const TextStyle(color: AppColors.textDim, fontSize: 12),
                       ),
-                    ),
+                    ],
                   ),
                 ),
-              )),
-      ],
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 
   Widget _statCard(String label, String value, IconData icon) {
     return Expanded(
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.05),
-          borderRadius: BorderRadius.circular(12),
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(AppRadii.md),
+          border: Border.all(color: AppColors.border),
         ),
         child: Column(
           children: [
-            Icon(icon, color: Colors.pinkAccent, size: 24),
-            const SizedBox(height: 8),
-            Text(value, style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
-            Text(label, style: const TextStyle(color: Colors.white54, fontSize: 12)),
+            Icon(icon, color: AppColors.primary, size: 22),
+            const SizedBox(height: 6),
+            Text(value, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w800)),
+            Text(label, style: const TextStyle(color: AppColors.textDim, fontSize: 11)),
           ],
         ),
       ),
@@ -307,11 +337,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Color _roleColor(UserRole role) {
     switch (role) {
       case UserRole.endUser:
-        return Colors.blueAccent;
+        return AppColors.tertiary;
       case UserRole.contentCreator:
-        return Colors.pinkAccent;
+        return AppColors.primary;
       case UserRole.superAdmin:
-        return Colors.amber;
+        return AppColors.warning;
     }
   }
 }

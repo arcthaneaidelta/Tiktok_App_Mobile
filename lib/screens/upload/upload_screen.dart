@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../providers/app_provider.dart';
+import '../../theme/app_theme.dart';
 
 class UploadScreen extends StatefulWidget {
   const UploadScreen({super.key});
@@ -42,7 +43,7 @@ class _UploadScreenState extends State<UploadScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Please select a video first'),
-          backgroundColor: Colors.red,
+          backgroundColor: AppColors.danger,
         ),
       );
       return;
@@ -62,7 +63,7 @@ class _UploadScreenState extends State<UploadScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Video uploaded successfully!'),
-          backgroundColor: Colors.green,
+          backgroundColor: AppColors.success,
         ),
       );
       _titleController.clear();
@@ -77,7 +78,7 @@ class _UploadScreenState extends State<UploadScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Upload failed: $e'),
-          backgroundColor: Colors.red,
+          backgroundColor: AppColors.danger,
         ),
       );
     }
@@ -86,149 +87,130 @@ class _UploadScreenState extends State<UploadScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF1a1a2e),
+      backgroundColor: AppColors.background,
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
         title: const Text('Upload Video'),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Video picker
-              GestureDetector(
-                onTap: _pickVideo,
-                child: Container(
-                  height: 200,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.05),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: Colors.white.withOpacity(0.15),
-                      style: BorderStyle.solid,
-                    ),
-                  ),
-                  child: _selectedVideoPath != null
-                      ? Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(Icons.check_circle, color: Colors.green, size: 48),
-                            const SizedBox(height: 12),
-                            Text(
-                              'Video selected',
-                              style: TextStyle(color: Colors.white.withOpacity(0.7)),
-                            ),
-                            const SizedBox(height: 4),
-                            TextButton(
-                              onPressed: _pickVideo,
-                              child: const Text('Change', style: TextStyle(color: Colors.pinkAccent)),
-                            ),
-                          ],
-                        )
-                      : Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.cloud_upload_outlined, size: 48, color: Colors.white.withOpacity(0.4)),
-                            const SizedBox(height: 12),
-                            Text(
-                              'Tap to select video',
-                              style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 16),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              'Max 60 seconds | MP4, MOV',
-                              style: TextStyle(color: Colors.white.withOpacity(0.3), fontSize: 13),
-                            ),
-                          ],
-                        ),
-                ),
-              ),
-              const SizedBox(height: 24),
-
-              TextFormField(
-                controller: _titleController,
-                style: const TextStyle(color: Colors.white),
-                decoration: _inputDecoration('Video Title', Icons.title),
-                validator: (v) => v == null || v.isEmpty ? 'Title is required' : null,
-              ),
-              const SizedBox(height: 16),
-
-              TextFormField(
-                controller: _musicController,
-                style: const TextStyle(color: Colors.white),
-                decoration: _inputDecoration('Music Name (optional)', Icons.music_note),
-              ),
-              const SizedBox(height: 16),
-
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.orange.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.orange.withOpacity(0.3)),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.info_outline, color: Colors.orange, size: 20),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        'Videos longer than 60 seconds will be rejected.',
-                        style: TextStyle(color: Colors.orange.withOpacity(0.8), fontSize: 13),
+      body: Container(
+        decoration: const BoxDecoration(gradient: AppGradients.backgroundGlow),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(20, 100, 20, 120),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                GestureDetector(
+                  onTap: _pickVideo,
+                  child: Container(
+                    height: 220,
+                    decoration: BoxDecoration(
+                      gradient: _selectedVideoPath != null
+                          ? LinearGradient(
+                              colors: [
+                                AppColors.primary.withOpacity(0.18),
+                                AppColors.secondary.withOpacity(0.10),
+                              ],
+                            )
+                          : null,
+                      color: _selectedVideoPath != null ? null : AppColors.surface,
+                      borderRadius: BorderRadius.circular(AppRadii.lg),
+                      border: Border.all(
+                        color: _selectedVideoPath != null
+                            ? AppColors.primary.withOpacity(0.6)
+                            : AppColors.border,
+                        width: _selectedVideoPath != null ? 1.5 : 1,
                       ),
                     ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 32),
-
-              SizedBox(
-                height: 52,
-                child: ElevatedButton(
-                  onPressed: _uploading ? null : _upload,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.pinkAccent,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    disabledBackgroundColor: Colors.pinkAccent.withOpacity(0.5),
+                    child: _selectedVideoPath != null
+                        ? Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Container(
+                                width: 64,
+                                height: 64,
+                                decoration: const BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  gradient: AppGradients.pinkPurple,
+                                ),
+                                child: const Icon(Icons.check_rounded, color: Colors.white, size: 32),
+                              ),
+                              const SizedBox(height: 12),
+                              const Text('Video selected', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+                              const SizedBox(height: 6),
+                              TextButton(
+                                onPressed: _pickVideo,
+                                child: const Text('Change'),
+                              ),
+                            ],
+                          )
+                        : Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: const [
+                              Icon(Icons.cloud_upload_outlined, size: 56, color: AppColors.textDim),
+                              SizedBox(height: 12),
+                              Text('Tap to select video',
+                                  style: TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w600)),
+                              SizedBox(height: 4),
+                              Text('Max 60 seconds  ·  MP4, MOV',
+                                  style: TextStyle(color: AppColors.textDim, fontSize: 12)),
+                            ],
+                          ),
                   ),
-                  child: _uploading
-                      ? const Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-                            ),
-                            SizedBox(width: 12),
-                            Text('Uploading...', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                          ],
-                        )
-                      : const Text('Upload', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                 ),
-              ),
-            ],
+                const SizedBox(height: 22),
+                TextFormField(
+                  controller: _titleController,
+                  style: const TextStyle(color: Colors.white),
+                  decoration: const InputDecoration(
+                    hintText: 'Video title',
+                    prefixIcon: Icon(Icons.title_rounded),
+                  ),
+                  validator: (v) => v == null || v.isEmpty ? 'Title is required' : null,
+                ),
+                const SizedBox(height: 14),
+                TextFormField(
+                  controller: _musicController,
+                  style: const TextStyle(color: Colors.white),
+                  decoration: const InputDecoration(
+                    hintText: 'Music name (optional)',
+                    prefixIcon: Icon(Icons.music_note_rounded),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: AppColors.warning.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(AppRadii.md),
+                    border: Border.all(color: AppColors.warning.withOpacity(0.4)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.info_outline_rounded, color: AppColors.warning, size: 20),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          'Videos longer than 60 seconds will be rejected.',
+                          style: TextStyle(color: AppColors.warning.withOpacity(0.9), fontSize: 13),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 28),
+                GradientButton(
+                  label: _uploading ? 'Uploading...' : 'Upload',
+                  icon: _uploading ? null : Icons.cloud_upload_rounded,
+                  onPressed: _uploading ? null : _upload,
+                  loading: _uploading,
+                ),
+              ],
+            ),
           ),
         ),
       ),
-    );
-  }
-
-  InputDecoration _inputDecoration(String hint, IconData icon) {
-    return InputDecoration(
-      hintText: hint,
-      hintStyle: const TextStyle(color: Colors.white54),
-      prefixIcon: Icon(icon, color: Colors.white54),
-      filled: true,
-      fillColor: Colors.white.withOpacity(0.08),
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.white.withOpacity(0.15))),
-      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Colors.pinkAccent)),
     );
   }
 }

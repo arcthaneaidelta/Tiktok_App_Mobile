@@ -6,6 +6,7 @@ import 'package:share_plus/share_plus.dart';
 import '../../models/video_model.dart';
 import '../../providers/app_provider.dart';
 import '../../services/api_client.dart';
+import '../../theme/app_theme.dart';
 import '../comments/comments_sheet.dart';
 import '../profile/creator_profile_screen.dart';
 
@@ -49,7 +50,7 @@ class _VideoFeedScreenState extends State<VideoFeedScreen> {
           return RefreshIndicator(
             onRefresh: provider.loadFeed,
             color: Colors.pinkAccent,
-            backgroundColor: const Color(0xFF1a1a2e),
+            backgroundColor: AppColors.surface,
             child: ListView(
               children: [
                 SizedBox(
@@ -75,7 +76,7 @@ class _VideoFeedScreenState extends State<VideoFeedScreen> {
         return RefreshIndicator(
           onRefresh: provider.loadFeed,
           color: Colors.pinkAccent,
-          backgroundColor: const Color(0xFF1a1a2e),
+          backgroundColor: AppColors.surface,
           child: PageView.builder(
             controller: _pageController,
             scrollDirection: Axis.vertical,

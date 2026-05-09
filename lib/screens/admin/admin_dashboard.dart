@@ -5,7 +5,9 @@ import '../../models/user_model.dart';
 import '../../models/video_model.dart';
 import '../../providers/app_provider.dart';
 import '../../services/admin_service.dart';
+import '../../theme/app_theme.dart';
 import '../../widgets/video_preview_sheet.dart';
+import '../../widgets/video_thumbnail.dart';
 
 class AdminDashboard extends StatefulWidget {
   const AdminDashboard({super.key});
@@ -75,31 +77,47 @@ class _AdminDashboardState extends State<AdminDashboard> with SingleTickerProvid
     return Consumer<AppProvider>(
       builder: (context, provider, _) {
         return Scaffold(
-          backgroundColor: const Color(0xFF1a1a2e),
+          backgroundColor: AppColors.background,
           appBar: AppBar(
-            title: const Text('Admin Dashboard'),
-            backgroundColor: Colors.transparent,
-            elevation: 0,
+            title: ShaderMask(
+              shaderCallback: (rect) => AppGradients.brand.createShader(rect),
+              child: const Text(
+                'Admin Dashboard',
+                style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, letterSpacing: 0.4),
+              ),
+            ),
             actions: [
-              IconButton(
-                icon: const Icon(Icons.refresh),
-                onPressed: _refreshAll,
-              ),
-              IconButton(
-                icon: const Icon(Icons.logout),
-                onPressed: () => provider.logout(),
-              ),
+              IconButton(icon: const Icon(Icons.refresh_rounded), onPressed: _refreshAll),
+              IconButton(icon: const Icon(Icons.logout_rounded), onPressed: () => provider.logout()),
             ],
-            bottom: TabBar(
-              controller: _tabController,
-              indicatorColor: Colors.pinkAccent,
-              labelColor: Colors.pinkAccent,
-              unselectedLabelColor: Colors.white54,
-              tabs: const [
-                Tab(text: 'Analytics', icon: Icon(Icons.analytics, size: 20)),
-                Tab(text: 'Videos', icon: Icon(Icons.video_library, size: 20)),
-                Tab(text: 'Users', icon: Icon(Icons.people, size: 20)),
-              ],
+            bottom: PreferredSize(
+              preferredSize: const Size.fromHeight(60),
+              child: Container(
+                margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.circular(AppRadii.pill),
+                  border: Border.all(color: AppColors.border),
+                ),
+                child: TabBar(
+                  controller: _tabController,
+                  indicator: BoxDecoration(
+                    gradient: AppGradients.pinkPurple,
+                    borderRadius: BorderRadius.circular(AppRadii.pill),
+                  ),
+                  indicatorSize: TabBarIndicatorSize.tab,
+                  dividerColor: Colors.transparent,
+                  labelColor: Colors.white,
+                  unselectedLabelColor: AppColors.textDim,
+                  labelStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, letterSpacing: 0.3),
+                  tabs: const [
+                    Tab(text: 'Analytics', icon: Icon(Icons.analytics_rounded, size: 18)),
+                    Tab(text: 'Videos', icon: Icon(Icons.video_library_rounded, size: 18)),
+                    Tab(text: 'Users', icon: Icon(Icons.people_rounded, size: 18)),
+                  ],
+                ),
+              ),
             ),
           ),
           body: TabBarView(
@@ -120,7 +138,7 @@ class _AdminDashboardState extends State<AdminDashboard> with SingleTickerProvid
       future: _analyticsFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator(color: Colors.pinkAccent));
+          return const Center(child: CircularProgressIndicator());
         }
         if (snapshot.hasError) {
           return _errorView(snapshot.error.toString(), () {
@@ -130,7 +148,7 @@ class _AdminDashboardState extends State<AdminDashboard> with SingleTickerProvid
         final a = snapshot.data!;
         return RefreshIndicator(
           color: Colors.pinkAccent,
-          backgroundColor: const Color(0xFF1a1a2e),
+          backgroundColor: AppColors.surface,
           onRefresh: () async {
             setState(() => _analyticsFuture = provider.getAnalytics());
             await _analyticsFuture;
@@ -141,68 +159,106 @@ class _AdminDashboardState extends State<AdminDashboard> with SingleTickerProvid
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Overview', style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 20),
-                Row(
-                  children: [
-                    _analyticsCard('Total Videos', '${a.totalVideos}', Icons.videocam, Colors.pinkAccent),
-                    const SizedBox(width: 12),
-                    _analyticsCard('Total Views', _formatCount(a.totalViews), Icons.visibility, Colors.blueAccent),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    _analyticsCard('Total Likes', _formatCount(a.totalLikes), Icons.favorite, Colors.redAccent),
-                    const SizedBox(width: 12),
-                    _analyticsCard('Total Comments', _formatCount(a.totalComments), Icons.comment, Colors.greenAccent),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    _analyticsCard('Total Users', '${a.totalUsers}', Icons.people, Colors.orangeAccent),
-                    const SizedBox(width: 12),
-                    _analyticsCard('Pending Approvals', '${a.pendingCount}', Icons.pending_actions, Colors.amber),
-                  ],
-                ),
-                const SizedBox(height: 32),
-                const Text('Top Videos', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                const Text('Overview',
+                    style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w800, letterSpacing: 0.3)),
                 const SizedBox(height: 16),
+                Row(
+                  children: [
+                    _analyticsCard('Videos', '${a.totalVideos}', Icons.videocam_rounded, AppColors.primary),
+                    const SizedBox(width: 10),
+                    _analyticsCard('Views', _formatCount(a.totalViews), Icons.visibility_rounded, AppColors.tertiary),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    _analyticsCard('Likes', _formatCount(a.totalLikes), Icons.favorite_rounded, AppColors.danger),
+                    const SizedBox(width: 10),
+                    _analyticsCard('Comments', _formatCount(a.totalComments), Icons.comment_rounded, AppColors.success),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    _analyticsCard('Users', '${a.totalUsers}', Icons.people_rounded, AppColors.secondary),
+                    const SizedBox(width: 10),
+                    _analyticsCard('Pending', '${a.pendingCount}', Icons.pending_actions_rounded, AppColors.warning),
+                  ],
+                ),
+                const SizedBox(height: 28),
+                const Text('Top Videos',
+                    style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w800, letterSpacing: 0.3)),
+                const SizedBox(height: 14),
                 if (a.topVideos.isEmpty)
-                  const Padding(
-                    padding: EdgeInsets.all(24),
-                    child: Center(child: Text('No videos yet', style: TextStyle(color: Colors.white38))),
+                  Container(
+                    padding: const EdgeInsets.all(28),
+                    decoration: BoxDecoration(
+                      color: AppColors.surface,
+                      borderRadius: BorderRadius.circular(AppRadii.md),
+                      border: Border.all(color: AppColors.border),
+                    ),
+                    child: const Center(child: Text('No videos yet', style: TextStyle(color: AppColors.textDim))),
                   )
                 else
-                  ...a.topVideos.map((video) => Container(
-                        margin: const EdgeInsets.only(bottom: 12),
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.05),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(video.title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                                  Text('@${video.creatorUsername}', style: const TextStyle(color: Colors.white54, fontSize: 13)),
-                                ],
-                              ),
+                  ...a.topVideos.asMap().entries.map((entry) {
+                    final rank = entry.key + 1;
+                    final video = entry.value;
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 10),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppColors.surface,
+                        borderRadius: BorderRadius.circular(AppRadii.md),
+                        border: Border.all(color: AppColors.border),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 28,
+                            height: 28,
+                            decoration: BoxDecoration(
+                              color: rank == 1
+                                  ? AppColors.warning.withOpacity(0.2)
+                                  : AppColors.surfaceMuted,
+                              borderRadius: BorderRadius.circular(AppRadii.sm),
                             ),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.end,
+                            child: Center(
+                              child: Text('$rank',
+                                  style: TextStyle(
+                                      color: rank == 1 ? AppColors.warning : AppColors.textDim,
+                                      fontWeight: FontWeight.w800,
+                                      fontSize: 13)),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          VideoThumbnail(thumbnailUrl: video.thumbnailUrl, size: 44),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text('${_formatCount(video.views)} views', style: const TextStyle(color: Colors.blueAccent, fontSize: 13)),
-                                Text('${_formatCount(video.likes)} likes', style: const TextStyle(color: Colors.pinkAccent, fontSize: 13)),
+                                Text(video.title,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 14)),
+                                Text('@${video.creatorUsername}',
+                                    style: const TextStyle(color: AppColors.textDim, fontSize: 12)),
                               ],
                             ),
-                          ],
-                        ),
-                      )),
+                          ),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Text('${_formatCount(video.views)} views',
+                                  style: const TextStyle(color: AppColors.tertiary, fontSize: 12, fontWeight: FontWeight.w600)),
+                              Text('${_formatCount(video.likes)} likes',
+                                  style: const TextStyle(color: AppColors.primary, fontSize: 12, fontWeight: FontWeight.w600)),
+                            ],
+                          ),
+                        ],
+                      ),
+                    );
+                  }),
               ],
             ),
           ),
@@ -241,7 +297,7 @@ class _AdminDashboardState extends State<AdminDashboard> with SingleTickerProvid
               ),
               PopupMenuButton<String>(
                 icon: const Icon(Icons.sort, color: Colors.white54),
-                color: const Color(0xFF2a2a4e),
+                color: AppColors.surfaceElevated,
                 onSelected: (value) {
                   setState(() => _sortBy = value);
                   _refreshVideos();
@@ -260,7 +316,7 @@ class _AdminDashboardState extends State<AdminDashboard> with SingleTickerProvid
             future: _videosFuture,
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator(color: Colors.pinkAccent));
+                return const Center(child: CircularProgressIndicator());
               }
               if (snapshot.hasError) {
                 return _errorView(snapshot.error.toString(), _refreshVideos);
@@ -273,7 +329,7 @@ class _AdminDashboardState extends State<AdminDashboard> with SingleTickerProvid
               }
               return RefreshIndicator(
                 color: Colors.pinkAccent,
-                backgroundColor: const Color(0xFF1a1a2e),
+                backgroundColor: AppColors.surface,
                 onRefresh: () async {
                   _refreshVideos();
                   await _videosFuture;
@@ -286,49 +342,46 @@ class _AdminDashboardState extends State<AdminDashboard> with SingleTickerProvid
                     return Container(
                       margin: const EdgeInsets.only(bottom: 12),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.05),
-                        borderRadius: BorderRadius.circular(12),
+                        color: AppColors.surface,
+                        borderRadius: BorderRadius.circular(AppRadii.md),
+                        border: Border.all(color: AppColors.border),
                       ),
                       child: Material(
                         color: Colors.transparent,
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(AppRadii.md),
                         child: InkWell(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(AppRadii.md),
                           onTap: () => _openVideoPreview(context, video),
                           child: Padding(
-                            padding: const EdgeInsets.all(16),
+                            padding: const EdgeInsets.all(12),
                             child: Row(
                               children: [
-                                Container(
-                                  width: 50,
-                                  height: 50,
-                                  decoration: BoxDecoration(
-                                    color: Colors.pinkAccent.withOpacity(0.2),
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: const Icon(Icons.play_arrow, color: Colors.pinkAccent),
-                                ),
+                                VideoThumbnail(thumbnailUrl: video.thumbnailUrl, size: 64),
                                 const SizedBox(width: 12),
                                 Expanded(
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      Text(video.title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                                      Text('@${video.creatorUsername}', style: const TextStyle(color: Colors.white54, fontSize: 13)),
+                                      Text(video.title,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 14)),
+                                      Text('@${video.creatorUsername}',
+                                          style: const TextStyle(color: AppColors.textDim, fontSize: 12)),
                                       const SizedBox(height: 4),
                                       Text(
-                                        '${_formatCount(video.views)} views | ${_formatCount(video.likes)} likes | ${_formatCount(video.commentCount)} comments',
-                                        style: const TextStyle(color: Colors.white38, fontSize: 12),
+                                        '${_formatCount(video.views)} views · ${_formatCount(video.likes)} likes · ${_formatCount(video.commentCount)} comments',
+                                        style: const TextStyle(color: AppColors.textFaint, fontSize: 11),
                                       ),
                                       Text(
                                         DateFormat('MMM d, yyyy').format(video.createdAt),
-                                        style: const TextStyle(color: Colors.white30, fontSize: 11),
+                                        style: const TextStyle(color: AppColors.textFaint, fontSize: 11),
                                       ),
                                     ],
                                   ),
                                 ),
                                 IconButton(
-                                  icon: const Icon(Icons.delete, color: Colors.redAccent),
+                                  icon: const Icon(Icons.delete_outline_rounded, color: AppColors.danger),
                                   onPressed: () => _confirmDeleteVideo(context, provider, video.id, video.title),
                                 ),
                               ],
@@ -350,7 +403,7 @@ class _AdminDashboardState extends State<AdminDashboard> with SingleTickerProvid
   Widget _buildUsersTab(AppProvider provider) {
     return RefreshIndicator(
       color: Colors.pinkAccent,
-      backgroundColor: const Color(0xFF1a1a2e),
+      backgroundColor: AppColors.surface,
       onRefresh: () async {
         _refreshUsers();
         await Future.wait([_usersFuture!, _pendingFuture!]);
@@ -365,7 +418,7 @@ class _AdminDashboardState extends State<AdminDashboard> with SingleTickerProvid
               future: _pendingFuture,
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const SizedBox(height: 60, child: Center(child: CircularProgressIndicator(color: Colors.pinkAccent)));
+                  return const SizedBox(height: 60, child: Center(child: CircularProgressIndicator()));
                 }
                 if (snapshot.hasError) {
                   return _errorView(snapshot.error.toString(), _refreshUsers);
@@ -438,7 +491,7 @@ class _AdminDashboardState extends State<AdminDashboard> with SingleTickerProvid
               future: _usersFuture,
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const SizedBox(height: 60, child: Center(child: CircularProgressIndicator(color: Colors.pinkAccent)));
+                  return const SizedBox(height: 60, child: Center(child: CircularProgressIndicator()));
                 }
                 if (snapshot.hasError) {
                   return _errorView(snapshot.error.toString(), _refreshUsers);
@@ -505,20 +558,28 @@ class _AdminDashboardState extends State<AdminDashboard> with SingleTickerProvid
   Widget _analyticsCard(String label, String value, IconData icon, Color color) {
     return Expanded(
       child: Container(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.08),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: color.withOpacity(0.2)),
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(AppRadii.md),
+          border: Border.all(color: AppColors.border),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(icon, color: color, size: 28),
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(AppRadii.sm),
+              ),
+              child: Icon(icon, color: color, size: 20),
+            ),
             const SizedBox(height: 12),
-            Text(value, style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 4),
-            Text(label, style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 13)),
+            Text(value, style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w800)),
+            const SizedBox(height: 2),
+            Text(label, style: const TextStyle(color: AppColors.textDim, fontSize: 12)),
           ],
         ),
       ),
@@ -551,7 +612,7 @@ class _AdminDashboardState extends State<AdminDashboard> with SingleTickerProvid
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF2a2a4e),
+        backgroundColor: AppColors.surfaceElevated,
         title: const Text('Delete Video', style: TextStyle(color: Colors.white)),
         content: Text('Delete "$title"?', style: const TextStyle(color: Colors.white70)),
         actions: [
