@@ -7,9 +7,11 @@ import '../../models/video_model.dart';
 import '../../providers/app_provider.dart';
 import '../../services/api_client.dart';
 import '../comments/comments_sheet.dart';
+import '../profile/creator_profile_screen.dart';
 
 class VideoFeedScreen extends StatefulWidget {
-  const VideoFeedScreen({super.key});
+  final bool isScreenActive;
+  const VideoFeedScreen({super.key, this.isScreenActive = true});
 
   @override
   State<VideoFeedScreen> createState() => _VideoFeedScreenState();
@@ -86,7 +88,7 @@ class _VideoFeedScreenState extends State<VideoFeedScreen> {
               return VideoCard(
                 key: ValueKey(videos[index].id),
                 video: videos[index],
-                isActive: index == _currentPage,
+                isActive: index == _currentPage && widget.isScreenActive,
               );
             },
           ),
@@ -219,13 +221,16 @@ class _VideoCardState extends State<VideoCard> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  '@${widget.video.creatorUsername}',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                    shadows: [Shadow(blurRadius: 4, color: Colors.black)],
+                GestureDetector(
+                  onTap: _openCreatorProfile,
+                  child: Text(
+                    '@${widget.video.creatorUsername}',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      shadows: [Shadow(blurRadius: 4, color: Colors.black)],
+                    ),
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -270,12 +275,17 @@ class _VideoCardState extends State<VideoCard> {
             child: Column(
               children: [
                 // Profile avatar
-                CircleAvatar(
-                  radius: 22,
-                  backgroundColor: Colors.pinkAccent,
-                  child: Text(
-                    widget.video.creatorUsername[0].toUpperCase(),
-                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                GestureDetector(
+                  onTap: _openCreatorProfile,
+                  child: CircleAvatar(
+                    radius: 22,
+                    backgroundColor: Colors.pinkAccent,
+                    child: Text(
+                      widget.video.creatorUsername.isNotEmpty
+                          ? widget.video.creatorUsername[0].toUpperCase()
+                          : '?',
+                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 24),
@@ -370,6 +380,18 @@ class _VideoCardState extends State<VideoCard> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => CommentsSheet(videoId: widget.video.id),
+    );
+  }
+
+  void _openCreatorProfile() {
+    if (widget.video.creatorId.isEmpty) return;
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => CreatorProfileScreen(
+          creatorId: widget.video.creatorId,
+          creatorUsername: widget.video.creatorUsername,
+        ),
+      ),
     );
   }
 }

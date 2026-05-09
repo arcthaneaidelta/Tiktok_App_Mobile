@@ -8,6 +8,7 @@ class ApiConfig {
   static String get authRegister => '$baseUrl$apiPath/auth/register';
   static String get authLogin => '$baseUrl$apiPath/auth/login';
   static String get authMe => '$baseUrl$apiPath/auth/me';
+  static String authUserById(String id) => '$baseUrl$apiPath/auth/users/$id';
 
   static String get videosFeed => '$baseUrl$apiPath/videos/feed';
   static String get videosLiked => '$baseUrl$apiPath/videos/liked';

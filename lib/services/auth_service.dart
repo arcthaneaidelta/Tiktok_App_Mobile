@@ -87,4 +87,14 @@ class AuthService {
       _currentUser = UserModel.fromJson(res['user'] as Map<String, dynamic>);
     } catch (_) {}
   }
+
+  /// Fetch a public user profile by id (no email returned).
+  Future<UserModel?> getUserById(String id) async {
+    try {
+      final res = await _api.get(ApiConfig.authUserById(id));
+      return UserModel.fromJson(res['user'] as Map<String, dynamic>);
+    } catch (_) {
+      return null;
+    }
+  }
 }

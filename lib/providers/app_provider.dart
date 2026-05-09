@@ -137,30 +137,44 @@ class AppProvider extends ChangeNotifier {
   Future<void> toggleLike(String videoId) async {
     if (currentUser == null) return;
     final wasLiked = isVideoLiked(videoId);
-    // Optimistic update
-    final updatedLiked = List<String>.from(currentUser!.likedVideoIds);
-    if (wasLiked) {
-      updatedLiked.remove(videoId);
-    } else {
-      updatedLiked.add(videoId);
-    }
+
     final idx = _feed.indexWhere((v) => v.id == videoId);
+    VideoModel? videoSnapshot;
     if (idx != -1) {
       _feed[idx] = _feed[idx].copyWith(
         likes: _feed[idx].likes + (wasLiked ? -1 : 1),
       );
+      videoSnapshot = _feed[idx];
+    } else {
+      for (final v in [..._likedVideos, ..._myVideos]) {
+        if (v.id == videoId) {
+          videoSnapshot = v;
+          break;
+        }
+      }
+    }
+
+    if (wasLiked) {
+      _likedVideos.removeWhere((v) => v.id == videoId);
+    } else if (videoSnapshot != null && !_likedVideos.any((v) => v.id == videoId)) {
+      _likedVideos.insert(0, videoSnapshot);
     }
     notifyListeners();
+
     try {
       await _videoService.toggleLike(videoId);
       await _authService.refreshCurrentUser();
       notifyListeners();
     } catch (_) {
-      // Revert on error
       if (idx != -1) {
         _feed[idx] = _feed[idx].copyWith(
           likes: _feed[idx].likes + (wasLiked ? 1 : -1),
         );
+      }
+      if (wasLiked && videoSnapshot != null) {
+        _likedVideos.insert(0, videoSnapshot);
+      } else if (!wasLiked) {
+        _likedVideos.removeWhere((v) => v.id == videoId);
       }
       notifyListeners();
     }
@@ -197,6 +211,11 @@ class AppProvider extends ChangeNotifier {
     _myVideos.removeWhere((v) => v.id == videoId);
     notifyListeners();
   }
+
+  Future<UserModel?> getUserById(String id) => _authService.getUserById(id);
+
+  Future<List<VideoModel>> getVideosByCreator(String id) =>
+      _videoService.getVideosByCreator(id);
 
   // ---------- Comments ----------
   List<CommentModel> getCachedComments(String videoId) =>

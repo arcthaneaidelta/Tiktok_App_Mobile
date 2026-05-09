@@ -31,7 +31,7 @@ class _HomeShellState extends State<HomeShell> {
     final isCreator = user.role == UserRole.contentCreator;
 
     final screens = <Widget>[
-      const VideoFeedScreen(),
+      VideoFeedScreen(isScreenActive: _currentIndex == 0),
       if (isCreator) const UploadScreen(),
       const ProfileScreen(),
     ];
