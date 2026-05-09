@@ -79,46 +79,12 @@ class _AdminDashboardState extends State<AdminDashboard> with SingleTickerProvid
         return Scaffold(
           backgroundColor: AppColors.background,
           appBar: AppBar(
-            title: ShaderMask(
-              shaderCallback: (rect) => AppGradients.brand.createShader(rect),
-              child: const Text(
-                'Admin Dashboard',
-                style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, letterSpacing: 0.4),
-              ),
-            ),
+            title: const Text('Admin Dashboard',
+                style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, letterSpacing: 0.3)),
             actions: [
               IconButton(icon: const Icon(Icons.refresh_rounded), onPressed: _refreshAll),
               IconButton(icon: const Icon(Icons.logout_rounded), onPressed: () => provider.logout()),
             ],
-            bottom: PreferredSize(
-              preferredSize: const Size.fromHeight(60),
-              child: Container(
-                margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-                padding: const EdgeInsets.all(4),
-                decoration: BoxDecoration(
-                  color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(AppRadii.pill),
-                  border: Border.all(color: AppColors.border),
-                ),
-                child: TabBar(
-                  controller: _tabController,
-                  indicator: BoxDecoration(
-                    gradient: AppGradients.pinkPurple,
-                    borderRadius: BorderRadius.circular(AppRadii.pill),
-                  ),
-                  indicatorSize: TabBarIndicatorSize.tab,
-                  dividerColor: Colors.transparent,
-                  labelColor: Colors.white,
-                  unselectedLabelColor: AppColors.textDim,
-                  labelStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, letterSpacing: 0.3),
-                  tabs: const [
-                    Tab(text: 'Analytics', icon: Icon(Icons.analytics_rounded, size: 18)),
-                    Tab(text: 'Videos', icon: Icon(Icons.video_library_rounded, size: 18)),
-                    Tab(text: 'Users', icon: Icon(Icons.people_rounded, size: 18)),
-                  ],
-                ),
-              ),
-            ),
           ),
           body: TabBarView(
             controller: _tabController,
@@ -128,6 +94,7 @@ class _AdminDashboardState extends State<AdminDashboard> with SingleTickerProvid
               _buildUsersTab(provider),
             ],
           ),
+          bottomNavigationBar: _AdminTabBar(controller: _tabController),
         );
       },
     );
@@ -661,4 +628,86 @@ class _AdminDashboardState extends State<AdminDashboard> with SingleTickerProvid
   void _openVideoPreview(BuildContext context, VideoModel video) {
     showVideoPreviewSheet(context, video);
   }
+}
+
+class _AdminTabBar extends StatelessWidget {
+  final TabController controller;
+  const _AdminTabBar({required this.controller});
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      top: false,
+      child: Container(
+        height: 56,
+        decoration: const BoxDecoration(
+          color: AppColors.surface,
+          border: Border(top: BorderSide(color: AppColors.border)),
+        ),
+        child: AnimatedBuilder(
+          animation: controller,
+          builder: (context, _) {
+            final tabs = const [
+              _AdminTabSpec(icon: Icons.analytics_rounded, label: 'Analytics'),
+              _AdminTabSpec(icon: Icons.video_library_rounded, label: 'Videos'),
+              _AdminTabSpec(icon: Icons.people_rounded, label: 'Users'),
+            ];
+            return Row(
+              children: List.generate(tabs.length, (i) {
+                final selected = controller.index == i;
+                final tab = tabs[i];
+                return Expanded(
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () => controller.animateTo(i),
+                    child: Center(
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: selected ? 14 : 10,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          gradient: selected ? AppGradients.pinkPurple : null,
+                          borderRadius: BorderRadius.circular(AppRadii.pill),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              tab.icon,
+                              size: 20,
+                              color: selected ? Colors.white : AppColors.textDim,
+                            ),
+                            if (selected) ...[
+                              const SizedBox(width: 6),
+                              Text(
+                                tab.label,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: 0.3,
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              }),
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+
+class _AdminTabSpec {
+  final IconData icon;
+  final String label;
+  const _AdminTabSpec({required this.icon, required this.label});
 }
