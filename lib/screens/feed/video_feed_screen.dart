@@ -5,6 +5,7 @@ import 'package:video_player/video_player.dart';
 import 'package:share_plus/share_plus.dart';
 import '../../models/video_model.dart';
 import '../../providers/app_provider.dart';
+import '../../services/api_client.dart';
 import '../comments/comments_sheet.dart';
 
 class VideoFeedScreen extends StatefulWidget {
@@ -117,7 +118,11 @@ class _VideoCardState extends State<VideoCard> {
   }
 
   void _initVideo() {
-    _controller = VideoPlayerController.networkUrl(Uri.parse(widget.video.videoUrl))
+    final token = ApiClient().token;
+    _controller = VideoPlayerController.networkUrl(
+      Uri.parse(widget.video.videoUrl),
+      httpHeaders: token != null ? {'Authorization': 'Bearer $token'} : const {},
+    )
       ..setLooping(true)
       ..initialize().then((_) {
         if (mounted) {

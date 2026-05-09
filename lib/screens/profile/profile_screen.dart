@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../models/user_model.dart';
 import '../../providers/app_provider.dart';
+import '../../widgets/video_preview_sheet.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -129,39 +130,49 @@ class _ProfileScreenState extends State<ProfileScreen> {
         else
           ...likedVideos.map((video) => Container(
                 margin: const EdgeInsets.only(bottom: 12),
-                padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: Colors.white.withOpacity(0.05),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 60,
-                      height: 60,
-                      decoration: BoxDecoration(
-                        color: Colors.pinkAccent.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Icon(Icons.play_arrow, color: Colors.pinkAccent),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                child: Material(
+                  color: Colors.transparent,
+                  borderRadius: BorderRadius.circular(12),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(12),
+                    onTap: () => showVideoPreviewSheet(context, video),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Row(
                         children: [
-                          Text(video.title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                          Text('@${video.creatorUsername}', style: const TextStyle(color: Colors.white54, fontSize: 13)),
+                          Container(
+                            width: 60,
+                            height: 60,
+                            decoration: BoxDecoration(
+                              color: Colors.pinkAccent.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Icon(Icons.play_arrow, color: Colors.pinkAccent),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(video.title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                                Text('@${video.creatorUsername}', style: const TextStyle(color: Colors.white54, fontSize: 13)),
+                              ],
+                            ),
+                          ),
+                          Column(
+                            children: [
+                              Text('${video.likes}', style: const TextStyle(color: Colors.pinkAccent, fontWeight: FontWeight.bold)),
+                              const Icon(Icons.favorite, color: Colors.pinkAccent, size: 16),
+                            ],
+                          ),
                         ],
                       ),
                     ),
-                    Column(
-                      children: [
-                        Text('${video.likes}', style: const TextStyle(color: Colors.pinkAccent, fontWeight: FontWeight.bold)),
-                        const Icon(Icons.favorite, color: Colors.pinkAccent, size: 16),
-                      ],
-                    ),
-                  ],
+                  ),
                 ),
               )),
       ],
@@ -220,37 +231,47 @@ class _ProfileScreenState extends State<ProfileScreen> {
         else
           ...videos.map((video) => Container(
                 margin: const EdgeInsets.only(bottom: 12),
-                padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: Colors.white.withOpacity(0.05),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 60,
-                      height: 60,
-                      decoration: BoxDecoration(
-                        color: Colors.pinkAccent.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Icon(Icons.play_arrow, color: Colors.pinkAccent),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                child: Material(
+                  color: Colors.transparent,
+                  borderRadius: BorderRadius.circular(12),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(12),
+                    onTap: () => showVideoPreviewSheet(context, video),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Row(
                         children: [
-                          Text(video.title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                          const SizedBox(height: 4),
-                          Text(
-                            '${_formatCount(video.views)} views  |  ${_formatCount(video.likes)} likes  |  ${_formatCount(video.commentCount)} comments',
-                            style: const TextStyle(color: Colors.white54, fontSize: 12),
+                          Container(
+                            width: 60,
+                            height: 60,
+                            decoration: BoxDecoration(
+                              color: Colors.pinkAccent.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Icon(Icons.play_arrow, color: Colors.pinkAccent),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(video.title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                                const SizedBox(height: 4),
+                                Text(
+                                  '${_formatCount(video.views)} views  |  ${_formatCount(video.likes)} likes  |  ${_formatCount(video.commentCount)} comments',
+                                  style: const TextStyle(color: Colors.white54, fontSize: 12),
+                                ),
+                              ],
+                            ),
                           ),
                         ],
                       ),
                     ),
-                  ],
+                  ),
                 ),
               )),
       ],

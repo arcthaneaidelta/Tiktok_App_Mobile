@@ -5,6 +5,7 @@ import '../../models/user_model.dart';
 import '../../models/video_model.dart';
 import '../../providers/app_provider.dart';
 import '../../services/admin_service.dart';
+import '../../widgets/video_preview_sheet.dart';
 
 class AdminDashboard extends StatefulWidget {
   const AdminDashboard({super.key});
@@ -284,46 +285,56 @@ class _AdminDashboardState extends State<AdminDashboard> with SingleTickerProvid
                     final video = videos[index];
                     return Container(
                       margin: const EdgeInsets.only(bottom: 12),
-                      padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
                         color: Colors.white.withOpacity(0.05),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 50,
-                            height: 50,
-                            decoration: BoxDecoration(
-                              color: Colors.pinkAccent.withOpacity(0.2),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: const Icon(Icons.play_arrow, color: Colors.pinkAccent),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                      child: Material(
+                        color: Colors.transparent,
+                        borderRadius: BorderRadius.circular(12),
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(12),
+                          onTap: () => _openVideoPreview(context, video),
+                          child: Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Row(
                               children: [
-                                Text(video.title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                                Text('@${video.creatorUsername}', style: const TextStyle(color: Colors.white54, fontSize: 13)),
-                                const SizedBox(height: 4),
-                                Text(
-                                  '${_formatCount(video.views)} views | ${_formatCount(video.likes)} likes | ${_formatCount(video.commentCount)} comments',
-                                  style: const TextStyle(color: Colors.white38, fontSize: 12),
+                                Container(
+                                  width: 50,
+                                  height: 50,
+                                  decoration: BoxDecoration(
+                                    color: Colors.pinkAccent.withOpacity(0.2),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: const Icon(Icons.play_arrow, color: Colors.pinkAccent),
                                 ),
-                                Text(
-                                  DateFormat('MMM d, yyyy').format(video.createdAt),
-                                  style: const TextStyle(color: Colors.white30, fontSize: 11),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(video.title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                                      Text('@${video.creatorUsername}', style: const TextStyle(color: Colors.white54, fontSize: 13)),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        '${_formatCount(video.views)} views | ${_formatCount(video.likes)} likes | ${_formatCount(video.commentCount)} comments',
+                                        style: const TextStyle(color: Colors.white38, fontSize: 12),
+                                      ),
+                                      Text(
+                                        DateFormat('MMM d, yyyy').format(video.createdAt),
+                                        style: const TextStyle(color: Colors.white30, fontSize: 11),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.delete, color: Colors.redAccent),
+                                  onPressed: () => _confirmDeleteVideo(context, provider, video.id, video.title),
                                 ),
                               ],
                             ),
                           ),
-                          IconButton(
-                            icon: const Icon(Icons.delete, color: Colors.redAccent),
-                            onPressed: () => _confirmDeleteVideo(context, provider, video.id, video.title),
-                          ),
-                        ],
+                        ),
                       ),
                     );
                   },
@@ -584,5 +595,9 @@ class _AdminDashboardState extends State<AdminDashboard> with SingleTickerProvid
       case UserRole.superAdmin:
         return Colors.amber;
     }
+  }
+
+  void _openVideoPreview(BuildContext context, VideoModel video) {
+    showVideoPreviewSheet(context, video);
   }
 }
